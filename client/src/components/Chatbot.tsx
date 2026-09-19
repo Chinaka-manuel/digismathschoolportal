@@ -1,0 +1,13 @@
+import { Bot, MessageCircle, Send, X } from 'lucide-react'
+import { useState } from 'react'
+import { api } from '../api/client'
+
+type Message = { role: 'bot' | 'user'; text: string }
+export function Chatbot() {
+  const [open, setOpen] = useState(false)
+  const [message, setMessage] = useState('')
+  const [messages, setMessages] = useState<Message[]>([{ role: 'bot', text: 'Hello. I can help with admissions, academics, fees, or contact details.' }])
+  const [typing, setTyping] = useState(false)
+  const send = async () => { const text = message.trim(); if (!text || typing) return; setMessage(''); setMessages((items) => [...items, { role: 'user', text }]); setTyping(true); try { const { data } = await api.post('/v1/chatbot', { message: text }); setMessages((items) => [...items, { role: 'bot', text: data.data.answer }]) } catch { setMessages((items) => [...items, { role: 'bot', text: 'I am unavailable right now. Please contact the school office.' }]) } finally { setTyping(false) } }
+  return <div className="fixed bottom-5 right-5 z-10"><button className="grid h-14 w-14 place-items-center rounded-full bg-forest text-sun shadow-xl" aria-label={open ? 'Close chatbot' : 'Open chatbot'} onClick={() => setOpen(!open)}>{open ? <X size={21} /> : <MessageCircle size={21} />}</button>{open && <section className="absolute bottom-16 right-0 flex h-[430px] w-[min(360px,calc(100vw-2rem))] flex-col border border-[#d8d9d0] bg-paper text-ink shadow-2xl" role="dialog" aria-label="Northbridge assistant"><header className="flex items-center gap-3 bg-forest p-4 text-white"><span className="grid h-8 w-8 place-items-center rounded-full bg-sun text-forest"><Bot size={17} /></span><div><strong className="block text-sm">Northbridge assistant</strong><span className="text-[10px] text-white/70">Usually replies instantly</span></div></header><div className="flex-1 space-y-3 overflow-y-auto p-4">{messages.map((item, index) => <div className={item.role === 'user' ? 'ml-8 bg-[#e5e9dd] p-3 text-sm' : 'mr-8 bg-white p-3 text-sm text-[#69736c]'} key={`${item.role}-${index}`}>{item.text}</div>)}{typing && <div className="mr-8 p-3 text-xs text-[#69736c]">Typing...</div>}</div><form className="flex border-t border-[#d8d9d0] p-3" onSubmit={(event) => { event.preventDefault(); void send() }}><input className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none" aria-label="Message assistant" placeholder="Ask about Northbridge..." value={message} onChange={(event) => setMessage(event.target.value)} /><button className="p-2 text-forest" aria-label="Send message" type="submit"><Send size={17} /></button></form></section>}</div>
+}
